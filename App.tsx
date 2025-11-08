@@ -1,11 +1,17 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { generateFashionPresentation } from './services/geminiService';
 import { UploadIcon, SparklesIcon, LoadingSpinnerIcon, ErrorIcon, ImageIcon, CameraIcon, UserIcon, ClockIcon, SwatchIcon, GoogleIcon, LogoutIcon } from './components/Icons';
+import { auth } from './firebase/config';
+import { 
+    onAuthStateChanged, 
+    User, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut
+} from 'firebase/auth';
 
-// --- TYPES ---
-type User = {
-    name: string;
-};
 
 // --- HELPER FUNCTIONS ---
 const fileToBase64 = (file: File): Promise<{ base64: string; mimeType: string }> => {
@@ -135,26 +141,52 @@ const LandingPage: React.FC<{ onStart: () => void }> = ({ onStart }) => {
     );
 };
 
-const AuthPage: React.FC<{ onLoginSuccess: (user: User) => void; onBack: () => void }> = ({ onLoginSuccess, onBack }) => {
+const AuthPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isLogin, setIsLogin] = useState(false);
-    const [name, setName] = useState('');
-    
-    // Simulate Google Sign-In
-    const handleGoogleSignIn = () => {
-        // In a real app, you would trigger the Google OAuth flow.
-        // Here, we'll simulate a successful login.
-        onLoginSuccess({ name: 'Utilisateur Google' });
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
+
+    const handleGoogleSignIn = async () => {
+        const provider = new GoogleAuthProvider();
+        try {
+            setError(null);
+            await signInWithPopup(auth, provider);
+            // onAuthStateChanged will handle the redirect to the app
+        } catch (err: any) {
+            setError(err.message);
+        }
     };
 
-    // Simulate Form Submission
-    const handleFormSubmit = (e: React.FormEvent) => {
+    const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Basic validation
-        if (!isLogin && !name.trim()) {
-            alert("Veuillez entrer votre nom.");
-            return;
+        setError(null);
+        try {
+            if (isLogin) {
+                await signInWithEmailAndPassword(auth, email, password);
+            } else {
+                await createUserWithEmailAndPassword(auth, email, password);
+            }
+             // onAuthStateChanged will handle the redirect to the app
+        } catch (err: any) {
+             switch (err.code) {
+                case 'auth/user-not-found':
+                    setError("Aucun compte n'est associé à cet e-mail.");
+                    break;
+                case 'auth/wrong-password':
+                    setError('Mot de passe incorrect.');
+                    break;
+                case 'auth/email-already-in-use':
+                    setError('Cet e-mail est déjà utilisé par un autre compte.');
+                    break;
+                 case 'auth/weak-password':
+                    setError('Le mot de passe doit comporter au moins 6 caractères.');
+                    break;
+                default:
+                    setError("Une erreur s'est produite. Veuillez réessayer.");
+                    break;
+            }
         }
-        onLoginSuccess({ name: name || 'Utilisateur' });
     };
     
     return (
@@ -185,27 +217,13 @@ const AuthPage: React.FC<{ onLoginSuccess: (user: User) => void; onBack: () => v
                         <div className="flex-grow border-t border-gray-300"></div>
                     </div>
 
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4 text-sm" role="alert">
+                           <p>{error}</p>
+                        </div>
+                    )}
+
                     <form onSubmit={handleFormSubmit} className="space-y-6">
-                        {!isLogin && (
-                             <div>
-                                <label htmlFor="full-name" className="block text-sm font-medium text-gray-700">
-                                    Nom complet
-                                </label>
-                                <div className="mt-1">
-                                    <input
-                                        id="full-name"
-                                        name="name"
-                                        type="text"
-                                        required
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                                        placeholder="ex: Adama Gueye"
-                                    />
-                                </div>
-                            </div>
-                        )}
-                       
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                 Adresse e-mail
@@ -217,6 +235,8 @@ const AuthPage: React.FC<{ onLoginSuccess: (user: User) => void; onBack: () => v
                                     type="email"
                                     autoComplete="email"
                                     required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                                     placeholder="vous@exemple.com"
                                 />
@@ -233,6 +253,8 @@ const AuthPage: React.FC<{ onLoginSuccess: (user: User) => void; onBack: () => v
                                     name="password"
                                     type="password"
                                     required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                                     placeholder="********"
                                 />
@@ -328,7 +350,7 @@ const StudioApp: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLog
             <div className="w-full max-w-6xl mx-auto">
                 <header className="text-center mb-8 relative">
                      <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center space-x-4">
-                        <span className="text-sm text-gray-600 hidden sm:block">Bienvenue, <span className="font-medium">{user.name}</span></span>
+                        <span className="text-sm text-gray-600 hidden sm:block">Bienvenue, <span className="font-medium">{user.displayName || user.email}</span></span>
                          <button onClick={onLogout} title="Déconnexion" className="text-gray-500 hover:text-indigo-600 transition-colors">
                             <LogoutIcon className="w-6 h-6"/>
                         </button>
@@ -469,47 +491,50 @@ const StudioApp: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLog
 const App: React.FC = () => {
     const [view, setView] = useState<'landing' | 'auth' | 'app'>('landing');
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
 
-    // Check for a logged-in user in localStorage on initial load
     useEffect(() => {
-        try {
-            const storedUser = localStorage.getItem('currentUser');
-            if (storedUser) {
-                setCurrentUser(JSON.parse(storedUser));
+        // onAuthStateChanged returns an unsubscribe function
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+            if (user) {
                 setView('app');
             }
-        } catch (error) {
-            console.error("Failed to parse user from localStorage", error);
-            localStorage.removeItem('currentUser');
-        }
+            setAuthLoading(false);
+        });
+
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
     }, []);
 
-    const handleLoginSuccess = (user: User) => {
-        setCurrentUser(user);
-        // NOTE: This is a simulation. In a real app, you'd store a token (JWT).
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        setView('app');
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            setView('landing');
+        } catch (error) {
+            console.error("Error signing out: ", error);
+        }
     };
-
-    const handleLogout = () => {
-        setCurrentUser(null);
-        localStorage.removeItem('currentUser');
-        setView('landing');
-    };
+    
+    if (authLoading) {
+        return (
+             <div className="min-h-screen flex items-center justify-center">
+                <LoadingSpinnerIcon className="w-12 h-12 text-indigo-600" />
+            </div>
+        );
+    }
 
     const renderView = () => {
+        if (currentUser) {
+            return <StudioApp user={currentUser} onLogout={handleLogout} />;
+        }
+        
         switch (view) {
-            case 'landing':
-                return <LandingPage onStart={() => setView('auth')} />;
             case 'auth':
-                return <AuthPage onLoginSuccess={handleLoginSuccess} onBack={() => setView('landing')}/>;
-            case 'app':
-                if (currentUser) {
-                    return <StudioApp user={currentUser} onLogout={handleLogout} />;
-                }
-                // If somehow we get to 'app' view without a user, redirect to auth
-                setView('auth');
-                return null;
+                return <AuthPage onBack={() => setView('landing')} />;
+            case 'landing':
+            default:
+                return <LandingPage onStart={() => setView('auth')} />;
         }
     };
 
