@@ -1,17 +1,38 @@
-import { GoogleGenAI, Modality } from "@google/genai";
-import { geminiApiKey } from '../firebase/config';
+const { onCall } = require("firebase-functions/v2/https");
+const { logger } = require("firebase-functions");
+const { GoogleGenAI, Modality } = require("@google/genai");
+const { defineString } = require('firebase-functions/params');
 
-// Initialise le client Google AI avec la clé API du fichier de configuration.
-// AVERTISSEMENT : Ceci est INSECURISÉ pour les applications en production car la clé API est exposée côté client.
-const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+// Récupère la clé API Gemini à partir de la configuration sécurisée de Firebase
+const geminiApiKey = defineString("GEMINI_KEY");
 
-export async function generateFashionPresentation(
-    base64GarmentData: string,
-    garmentMimeType: string,
-    brandName: string,
-    style: string,
-    aspectRatio: string
-): Promise<string> {
+exports.generateFashionPresentation = onCall(async (request) => {
+    // Vérifie si l'utilisateur est authentifié
+    if (!request.auth) {
+        throw new functions.https.HttpsError(
+            "unauthenticated",
+            "The function must be called while authenticated."
+        );
+    }
+    
+    const { 
+        base64GarmentData, 
+        garmentMimeType, 
+        brandName, 
+        style, 
+        aspectRatio 
+    } = request.data;
+    
+    // Valide les données d'entrée
+    if (!base64GarmentData || !garmentMimeType || !brandName || !style || !aspectRatio) {
+        throw new functions.https.HttpsError(
+            "invalid-argument",
+            "Missing required parameters for image generation."
+        );
+    }
+
+    logger.info("Initializing GoogleGenAI with API Key");
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey.value() });
     
     const garmentPart = {
         inlineData: {
@@ -54,7 +75,7 @@ export async function generateFashionPresentation(
     const parts = [garmentPart, textPart];
 
     try {
-        console.log("Calling Gemini API directly from client...");
+        logger.info("Calling Gemini API...");
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
@@ -67,15 +88,18 @@ export async function generateFashionPresentation(
 
         for (const part of response.candidates?.[0]?.content?.parts || []) {
             if (part.inlineData) {
-                console.log("Successfully generated image data from client-side call.");
-                return part.inlineData.data;
+                logger.info("Successfully generated image data.");
+                return { base64Image: part.inlineData.data };
             }
         }
         
         throw new Error("No image data found in the API response.");
 
     } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        throw new Error("The request to the AI service failed.");
+        logger.error("Error calling Gemini API:", error);
+        throw new functions.https.HttpsError(
+            "internal",
+            "The request to the AI service failed."
+        );
     }
-}
+});
