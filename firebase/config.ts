@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFunctions } from 'firebase/functions';
+// FIX: Switched to Firebase v9 compatibility imports to resolve module export errors.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
 
 // Your app's Firebase project configuration
 const firebaseConfig = {
@@ -15,10 +15,10 @@ const firebaseConfig = {
 
 
 // Initialize Firebase
-export const app = initializeApp(firebaseConfig);
+// FIX: Use compat initialization to avoid errors in environments that don't support tree-shaking well or have module resolution issues.
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
 // Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
-
-// Initialize Cloud Functions and get a reference to the service
-export const functions = getFunctions(app);
+export const auth = firebase.auth();

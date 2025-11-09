@@ -1,16 +1,13 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { generateFashionPresentation } from './services/geminiService';
 import { UploadIcon, SparklesIcon, LoadingSpinnerIcon, ErrorIcon, ImageIcon, CameraIcon, UserIcon, ClockIcon, SwatchIcon, GoogleIcon, LogoutIcon, DownloadIcon, ArrowRightIcon, ArrowDownIcon } from './components/Icons';
 import { auth } from './firebase/config';
-import { 
-    onAuthStateChanged, 
-    User, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut
-} from 'firebase/auth';
+// FIX: Switched to Firebase v9 compatibility imports to resolve module export errors.
+// This is necessary when the project setup (e.g., dependencies, bundler config)
+// prevents the modern modular API from being resolved correctly.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
 
 
 // --- HELPER FUNCTIONS ---
@@ -191,10 +188,12 @@ const AuthPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [error, setError] = useState<string | null>(null);
 
     const handleGoogleSignIn = async () => {
-        const provider = new GoogleAuthProvider();
+        // FIX: Use v8/compat API for GoogleAuthProvider
+        const provider = new firebase.auth.GoogleAuthProvider();
         try {
             setError(null);
-            await signInWithPopup(auth, provider);
+            // FIX: Use v8/compat API for signInWithPopup
+            await auth.signInWithPopup(provider);
             // onAuthStateChanged will handle the redirect to the app
         } catch (err: any) {
             setError(err.message);
@@ -206,9 +205,11 @@ const AuthPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setError(null);
         try {
             if (isLogin) {
-                await signInWithEmailAndPassword(auth, email, password);
+                // FIX: Use v8/compat API for signInWithEmailAndPassword
+                await auth.signInWithEmailAndPassword(email, password);
             } else {
-                await createUserWithEmailAndPassword(auth, email, password);
+                // FIX: Use v8/compat API for createUserWithEmailAndPassword
+                await auth.createUserWithEmailAndPassword(email, password);
             }
              // onAuthStateChanged will handle the redirect to the app
         } catch (err: any) {
@@ -327,7 +328,8 @@ const AuthPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     );
 };
 
-const StudioApp: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLogout }) => {
+// FIX: Use firebase.User as the type for the user object, which is provided by the compat library.
+const StudioApp: React.FC<{ user: firebase.User; onLogout: () => void }> = ({ user, onLogout }) => {
     const [garmentImage, setGarmentImage] = useState<{ file: File; preview: string; base64: string; mimeType: string } | null>(null);
     const [brandName, setBrandName] = useState<string>('Adama Paris');
     const [presentationStyle, setPresentationStyle] = useState<string>(PRESENTATION_STYLES[0]);
@@ -555,12 +557,14 @@ const StudioApp: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLog
 
 const App: React.FC = () => {
     const [view, setView] = useState<'landing' | 'auth' | 'app'>('landing');
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    // FIX: Use firebase.User as the type for the user state.
+    const [currentUser, setCurrentUser] = useState<firebase.User | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
 
     useEffect(() => {
         // onAuthStateChanged returns an unsubscribe function
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        // FIX: Use v8/compat API for onAuthStateChanged
+        const unsubscribe = auth.onAuthStateChanged((user) => {
             setCurrentUser(user);
             if (user) {
                 setView('app');
@@ -574,7 +578,8 @@ const App: React.FC = () => {
 
     const handleLogout = async () => {
         try {
-            await signOut(auth);
+            // FIX: Use v8/compat API for signOut
+            await auth.signOut();
             setView('landing');
         } catch (error) {
             console.error("Error signing out: ", error);
