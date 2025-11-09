@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { generateFashionPresentation } from './services/geminiService';
-import { UploadIcon, SparklesIcon, LoadingSpinnerIcon, ErrorIcon, ImageIcon, CameraIcon, UserIcon, ClockIcon, SwatchIcon, GoogleIcon, LogoutIcon } from './components/Icons';
+import { UploadIcon, SparklesIcon, LoadingSpinnerIcon, ErrorIcon, ImageIcon, CameraIcon, UserIcon, ClockIcon, SwatchIcon, GoogleIcon, LogoutIcon, DownloadIcon, ArrowRightIcon, ArrowDownIcon } from './components/Icons';
 import { auth } from './firebase/config';
 import { 
     onAuthStateChanged, 
@@ -84,30 +84,73 @@ const LandingPage: React.FC<{ onStart: () => void }> = ({ onStart }) => {
                 </div>
             </section>
 
-             {/* Features Section */}
+            {/* Transformation Section */}
             <section className="py-20 bg-gray-50">
+                <div className="container mx-auto px-6 text-center">
+                    <h2 className="text-3xl font-bold mb-4">Voyez la Transformation</h2>
+                    <p className="text-gray-600 mb-12 max-w-2xl mx-auto">D'une simple photo de produit à une publicité de mode captivante, générée par IA.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative">
+                        {/* Before */}
+                        <div className="flex flex-col items-center">
+                            <h3 className="text-xl font-semibold mb-4 text-gray-700">Avant : Votre Photo</h3>
+                            <div className="bg-white p-4 rounded-lg shadow-xl overflow-hidden aspect-[9/16]">
+                                <img 
+                                    src="https://i.ibb.co/6rP3S1V/dress-before.jpg" 
+                                    alt="Robe sur fond neutre avant transformation IA" 
+                                    className="rounded-md w-full h-full object-cover"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Arrow for Mobile */}
+                        <div className="flex md:hidden justify-center items-center">
+                            <ArrowDownIcon className="w-8 h-8 text-indigo-600" />
+                        </div>
+
+                        {/* After */}
+                        <div className="flex flex-col items-center">
+                             <h3 className="text-xl font-semibold mb-4 text-indigo-600">Après : Notre Magie IA</h3>
+                             <div className="bg-white p-4 rounded-lg shadow-xl overflow-hidden aspect-[9/16]">
+                                <img 
+                                    src="https://i.ibb.co/3kZmx7T/dress-after-generated.jpg" 
+                                    alt="Mannequin portant la robe dans un décor urbain généré par IA" 
+                                    className="rounded-md w-full h-full object-cover"
+                                />
+                             </div>
+                        </div>
+                        
+                        {/* Arrow for Desktop */}
+                        <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full p-3 shadow-lg z-10">
+                           <ArrowRightIcon className="w-8 h-8 text-indigo-600" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+             {/* Features Section */}
+            <section className="py-20 bg-white">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl font-bold">Conçu pour l'Excellence</h2>
                         <p className="text-gray-600">Des outils puissants pour sublimer vos créations.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <div className="bg-white p-6 rounded-lg shadow-sm text-center">
+                        <div className="bg-white p-6 rounded-lg shadow-sm text-center border">
                             <SparklesIcon className="w-10 h-10 mx-auto text-indigo-500 mb-4" />
                             <h3 className="text-lg font-semibold mb-2">Qualité Professionnelle</h3>
                             <p className="text-sm text-gray-600">Des images dignes d'un magazine de mode pour captiver votre audience.</p>
                         </div>
-                        <div className="bg-white p-6 rounded-lg shadow-sm text-center">
+                        <div className="bg-white p-6 rounded-lg shadow-sm text-center border">
                             <ClockIcon className="w-10 h-10 mx-auto text-indigo-500 mb-4" />
                             <h3 className="text-lg font-semibold mb-2">Gain de Temps & d'Argent</h3>
                             <p className="text-sm text-gray-600">Plus besoin de séances photo coûteuses et complexes à organiser.</p>
                         </div>
-                        <div className="bg-white p-6 rounded-lg shadow-sm text-center">
+                        <div className="bg-white p-6 rounded-lg shadow-sm text-center border">
                             <UserIcon className="w-10 h-10 mx-auto text-indigo-500 mb-4" />
                             <h3 className="text-lg font-semibold mb-2">Modèles Réalistes</h3>
                             <p className="text-sm text-gray-600">Présentez vos créations sur des modèles photoréalistes et variés.</p>
                         </div>
-                         <div className="bg-white p-6 rounded-lg shadow-sm text-center">
+                         <div className="bg-white p-6 rounded-lg shadow-sm text-center border">
                             <SwatchIcon className="w-10 h-10 mx-auto text-indigo-500 mb-4" />
                             <h3 className="text-lg font-semibold mb-2">Styles Multiples</h3>
                             <p className="text-sm text-gray-600">Du studio minimaliste au style urbain, choisissez l'ambiance parfaite.</p>
@@ -344,6 +387,19 @@ const StudioApp: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLog
             setIsLoading(false);
         }
     }, [garmentImage, brandName, presentationStyle, aspectRatio]);
+
+    const handleDownload = () => {
+        if (!generatedImage) return;
+
+        const link = document.createElement('a');
+        link.href = generatedImage;
+        const safeBrandName = brandName.trim().replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() || 'creation';
+        const styleName = presentationStyle.trim().replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        link.download = `studio-ia-${safeBrandName}-${styleName}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
     
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 sm:p-6 lg:p-8 font-sans">
@@ -479,6 +535,15 @@ const StudioApp: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLog
                                      </div>
                                 )}
                            </div>
+                           {generatedImage && !isLoading && !error && (
+                                <button
+                                    onClick={handleDownload}
+                                    className="mt-4 w-full flex items-center justify-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                                >
+                                    <DownloadIcon className="w-5 h-5 mr-3" />
+                                    Télécharger l'Image
+                                </button>
+                           )}
                         </div>
                     </div>
                 </main>
