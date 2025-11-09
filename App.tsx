@@ -95,8 +95,8 @@ const LandingPage: React.FC<{ onStart: () => void }> = ({ onStart }) => {
                             <h3 className="text-xl font-semibold mb-4 text-gray-700">Avant : Votre Photo</h3>
                             <div className="bg-white p-4 rounded-lg shadow-xl overflow-hidden aspect-[9/16]">
                                 <img 
-                                    src="https://i.ibb.co/6rP3S1V/dress-before.jpg" 
-                                    alt="Robe sur fond neutre avant transformation IA" 
+                                    src="https://i.ibb.co/yQk3v14/dress-before-mannequin.jpg" 
+                                    alt="Robe sur mannequin en bois avant transformation IA" 
                                     className="rounded-md w-full h-full object-cover"
                                 />
                             </div>
@@ -112,8 +112,8 @@ const LandingPage: React.FC<{ onStart: () => void }> = ({ onStart }) => {
                              <h3 className="text-xl font-semibold mb-4 text-indigo-600">Après : Notre Magie IA</h3>
                              <div className="bg-white p-4 rounded-lg shadow-xl overflow-hidden aspect-[9/16]">
                                 <img 
-                                    src="https://i.ibb.co/3kZmx7T/dress-after-generated.jpg" 
-                                    alt="Mannequin portant la robe dans un décor urbain généré par IA" 
+                                    src="https://i.ibb.co/hK7Jg8q/dress-after-human.jpg" 
+                                    alt="Modèle humain portant la robe dans un décor photoréaliste généré par IA" 
                                     className="rounded-md w-full h-full object-cover"
                                 />
                              </div>
