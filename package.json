@@ -4,7 +4,6 @@
   "private": true,
   "description": "Vercel serverless functions for Studio de Mode IA",
   "dependencies": {
-    "@google/genai": "^0.14.0",
-    "firebase-admin": "^12.1.0"
+    "@google/genai": "^0.14.0"
   }
 }

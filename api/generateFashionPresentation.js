@@ -1,39 +1,10 @@
 const { GoogleGenAI, Modality } = require("@google/genai");
-const admin = require("firebase-admin");
-
-// Initialize Firebase Admin SDK.
-// This requires a FIREBASE_SERVICE_ACCOUNT_KEY environment variable in Vercel.
-// The variable should contain the JSON content of your service account key.
-if (!admin.apps.length) {
-  try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  } catch (error) {
-    console.error("Firebase Admin initialization error:", error.message);
-  }
-}
 
 // Vercel Serverless Function handler
 module.exports = async (req, res) => {
     // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
-    }
-
-    // --- Authentication ---
-    try {
-        const authorizationHeader = req.headers.authorization;
-        if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Unauthorized: No token provided.' });
-        }
-        
-        const idToken = authorizationHeader.split('Bearer ')[1];
-        await admin.auth().verifyIdToken(idToken);
-    } catch (error) {
-        console.error("Error verifying Firebase ID token:", error);
-        return res.status(403).json({ error: 'Forbidden: Invalid token.' });
     }
     
     // --- Input Validation ---
