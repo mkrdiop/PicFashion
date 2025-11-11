@@ -6,10 +6,20 @@ export async function generateFashionPresentation(
     aspectRatio: string
 ): Promise<string> {
     try {
-        const response = await fetch('/api/generateFashionPresentation', {
+        const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+            throw new Error("Configuration Supabase manquante.");
+        }
+
+        const functionUrl = `${supabaseUrl}/functions/v1/generate-fashion-image`;
+
+        const response = await fetch(functionUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseAnonKey}`,
             },
             body: JSON.stringify({
                 base64GarmentData,
